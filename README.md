@@ -1,44 +1,50 @@
-# 🤖 Google Forms Auto Answer via AI API
+# 🤖 Google Forms Auto Answer via AI API (Vision & Multi-Select Supported)
 
-Skrip otomatisasi browser console untuk membaca soal Google Form, memproses jawaban menggunakan API AI, dan memilih opsi jawaban secara otomatis langsung di layar.
+Skrip otomatisasi browser console untuk membaca soal Google Form, menganalisis teks maupun **soal bergambar**, memproses jawaban menggunakan AI API, dan memilih opsi jawaban secara otomatis di layar.
+
+---
+
+## ✨ Fitur-Fitur Utama
+
+* 📸 **Vision / Multimodal Support:** Mampu membaca dan menganalisis soal bergambar (grafik, diagram, rumus) menggunakan model Vision (`Gemini 2.0 Flash` / `Llama 3.2 Vision`).
+* ☑️ **Multi-Select (Checkbox) Support:** Mendeteksi soal centang yang memiliki **lebih dari satu jawaban benar** dan mencentang semua opsi yang tepat secara otomatis.
+* ⏩ **Auto-Skip Biodata:** Otomatis melompati kolom identitas seperti *Nama, NIM/NPM, Email, Kelas, No. HP*, dan isian teks tanpa pilihan.
+* 🔍 **Smart Model Filtering:** Memburu dan menyaring model generatif terbaik secara otomatis. Bebas dari eror model audio/TTS/guardrail (`400 Bad Request`).
+* ⏳ **Rate Limit & Safety Handler:** Dilengkapi sistem penanganan *HTTP 429 (Rate Limit)* dengan jeda aman.
+* 🛡️ **Review Before Submit:** Skrip hanya mencentang pilihan di layar tanpa menekan tombol *Submit*, sehingga kamu tetap bisa meninjau ulang semua jawaban.
 
 ---
 
 ## 📂 Pilihan Versi Skrip
 
-| Nama File | API Provider | Kecepatan / Jeda | Keterangan & Penggunaan |
+| Nama File | API Provider | Jeda Per Soal | Fitur Utama & Penggunaan |
 | :--- | :--- | :--- | :--- |
-| **`groq-safe.js`** | Groq (Llama 3 / Mixtral) | 2.5 Detik | **Sangat Direkomendasikan.** Dilengkapi fitur penanganan otomatis jika terkena *rate limit*. Sangat aman untuk formulir banyak soal (50–100+ soal). |
-| **`groq-fast.js`** | Groq (Llama 3 / Mixtral) | 1 Detik | Untuk pengisian cepat pada formulir berjumlah soal sedikit sampai sedang (<30 soal). |
-| **`gemini-auto.js`** | Google AI Studio (Gemini 2.0 Flash) | 1 Detik | Menggunakan model `gemini-2.0-flash`. Wajib menggunakan API Key dari akun Gmail pribadi. |
-
----
-
-## ✨ Fitur Utama
-
-* **Auto Model Detection:** Otomatis mendeteksi model generatif teks yang aktif di akun API tanpa perlu menentukan nama model secara manual.
-* **Smart Model Filtering:** Otomatis menyaring dan mengabaikan model keamanan atau pemindai khusus agar respon AI murni berupa teks pilihan jawaban.
-* **Rate Limit Handler:** Memiliki fitur jeda dan percobaan ulang otomatis saat batas kuota API tercapai.
-* **Safe Mode (Review Before Submit):** Skrip hanya memilih pilihan di layar tanpa menekan tombol *Submit*, sehingga jawaban bisa diperiksa kembali.
+| **`groq-safe.js`** | Groq (`Llama 3.3` / `Llama 3.2 Vision`) | 2.5 Detik | **Sangat Direkomendasikan.** Aman dari pembatasan kuota (*rate limit 429*), mendukung soal bergambar & jawaban majemuk. Cocok untuk ujian 50–100+ soal. |
+| **`groq-fast.js`** | Groq (`Llama 3.3` / `Llama 3.2 Vision`) | 1 Detik | Versi cepat untuk kuis kilat dengan jumlah soal sedikit (<30 soal). |
+| **`gemini-auto.js`** | Google AI Studio (`Gemini 2.0 Flash`) | 1 Detik | Sangat akurat untuk soal bergambar kompleks & rumus. Wajib menggunakan API Key dari akun `@gmail.com` pribadi. |
 
 ---
 
 ## 🚀 Cara Penggunaan
 
-1. **Dapatkan API Key:**
-   * **Groq:** Buat API Key gratis di [console.groq.com/keys](https://console.groq.com/keys).
-   * **Gemini:** Buat API Key gratis di [aistudio.google.com](https://aistudio.google.com) menggunakan akun Gmail pribadi.
+1. **Dapatkan API Key Gratis:**
+   * **Groq API:** Dapatkan di [console.groq.com/keys](https://console.groq.com/keys).
+   * **Gemini API:** Dapatkan di [aistudio.google.com](https://aistudio.google.com) (*Wajib login dengan akun Gmail pribadi*).
 
 2. **Jalankan Skrip di Browser:**
    * Buka formulir Google Form yang ingin diisi.
-   * Tekan tombol **F12** (atau Klik Kanan -> **Inspect**) lalu buka tab **Console**.
-   * Pilih salah satu file skrip di repositori ini (`groq-safe.js`, `groq-fast.js`, atau `gemini-auto.js`), lalu salin seluruh kodenya.
-   * Ganti isi variabel `API_KEY` pada baris pertama kodingan dengan API Key milikmu.
-   * Tempelkan kode ke Console browser lalu tekan **Enter**.
+   * Tekan **F12** (atau Klik Kanan $\rightarrow$ **Inspect**) lalu masuk ke tab **Console**.
+   * Salin seluruh kode dari salah satu file (`groq-safe.js`, `groq-fast.js`, atau `gemini-auto.js`).
+   * Ganti isi variabel `API_KEY` pada baris pertama kodingan dengan API Key milikmu:
+     ```javascript
+     const API_KEY = "gsk_API_KEY_KAMU_DI_SINI";
+     ```
+   * Tempelkan kode ke dalam Console browser lalu tekan **Enter**.
 
 3. **Selesai:**
-   * Perhatikan jalannya proses pada log Console. Pilihan jawaban di Google Form akan tercentang otomatis satu per satu.
+   * Perhatikan log pada Console. Pilihan jawaban di layar akan terisi secara otomatis satu per satu.
+   * Periksa kembali jawaban sebelum menekan tombol **Submit**.
 
 ---
 
-⚠️ **Disclaimer:** Repositori ini dibuat hanya untuk tujuan edukasi, pembelajaran manipulasi DOM browser, dan pemahaman integrasi REST API AI.
+⚠️ **Disclaimer:** Repositori ini dibuat hanya untuk tujuan edukasi, pembelajaran manipulasi DOM browser, serta eksplorasi kemampuan Vision & REST API dari Large Language Models (LLM).
