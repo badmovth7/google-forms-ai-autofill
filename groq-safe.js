@@ -1,6 +1,5 @@
 const API_KEY = "YOUR_GROQ_API_KEY"; // Ganti dengan API Key Groq kamu (gsk_...)
 
-// Helper: Konversi elemen gambar ke Base64 via Canvas & Fetch
 async function getImgBase64(imgEl) {
   try {
     if (!imgEl || !imgEl.src) return null;
@@ -39,9 +38,9 @@ async function autoAnswerGoogleFormSafe() {
     return;
   }
 
-  console.log("🔍 Mengecek daftar model Teks & Vision di Groq...");
-  let textModel = "llama-3.3-70b-versatile";
-  let visionModel = "llama-3.2-11b-vision-preview";
+  console.log("🔍 Mengecek daftar model aktif di Groq...");
+  let textModel = "openai/gpt-oss-120b";
+  let visionModel = null;
 
   try {
     const resModel = await fetch("https://api.groq.com/openai/v1/models", {
@@ -50,11 +49,11 @@ async function autoAnswerGoogleFormSafe() {
     const dataModel = await resModel.json();
 
     if (dataModel.data && dataModel.data.length > 0) {
-      const validTextKws = ["llama", "mixtral", "gemma", "deepseek", "qwen"];
+      const validKws = ["gpt-oss", "qwen", "llama", "mixtral", "gemma", "deepseek"];
       
       const foundText = dataModel.data.find(m => {
         const id = m.id.toLowerCase();
-        return validTextKws.some(kw => id.includes(kw)) &&
+        return validKws.some(kw => id.includes(kw)) &&
                !id.includes("guard") && !id.includes("embed") && !id.includes("whisper") &&
                !id.includes("orpheus") && !id.includes("tts") && !id.includes("stt") &&
                !id.includes("audio") && !id.includes("vision");
@@ -63,14 +62,13 @@ async function autoAnswerGoogleFormSafe() {
 
       const foundVision = dataModel.data.find(m => {
         const id = m.id.toLowerCase();
-        return (id.includes("vision") || id.includes("llama-3.2")) &&
-               !id.includes("guard") && !id.includes("embed");
+        return id.includes("vision") && !id.includes("guard") && !id.includes("embed");
       });
       if (foundVision) visionModel = foundVision.id;
     }
-    console.log(`✅ Model Teks: "${textModel}" | Model Vision: "${visionModel}"`);
+    console.log(`✅ Model Teks: "${textModel}" ${visionModel ? `| Model Vision: "${visionModel}"` : '| Vision: (Fallback Teks)'}`);
   } catch (err) {
-    console.warn("⚠️ Menggunakan nama model standar Groq.");
+    console.warn("⚠️ Menggunakan model teks standar.");
   }
 
   const elemenSoal = document.querySelectorAll('div[role="listitem"]');
@@ -79,30 +77,25 @@ async function autoAnswerGoogleFormSafe() {
   for (let i = 0; i < elemenSoal.length; i++) {
     const item = elemenSoal[i];
 
-    // 1. Ekstraksi Judul Soal
     const judulEl = item.querySelector('div[role="heading"]') || item.querySelector('[aria-level]');
     if (!judulEl) continue;
     const teksSoal = judulEl.innerText.replace(/\n/g, ' ').trim();
 
-    // 2. Filter Biodata / Identitas / Isian Teks Singkat
     const isBio = /nama|nim|npm|email|kelas|prodi|jurusan|biodata|no\.?\s*hp|nomor\s*hp/i.test(teksSoal.toLowerCase());
     const elemenOpsi = Array.from(item.querySelectorAll('[role="radio"], [role="checkbox"]'));
 
     if (isBio || elemenOpsi.length === 0) {
-      console.log(`⏩ Soal ${i + 1} dilewati (Biodata / Isian teks).`);
+      console.log(`⏩ Soal ${i + 1} dilewati (Biodata / Isian Teks).`);
       continue;
     }
 
-    // 3. Deteksi Tipe Soal (Radio vs Checkbox)
     const isCheckbox = elemenOpsi.some(el => el.getAttribute('role') === 'checkbox');
 
-    // 4. Ekstraksi Pilihan Jawaban
     const daftarOpsi = elemenOpsi.map((opsi, idx) => {
       const rawLabel = (opsi.getAttribute('aria-label') || opsi.closest('label')?.innerText || opsi.innerText || "").trim();
       return rawLabel ? rawLabel : `Opsi ${idx + 1}`;
     });
 
-    // 5. Ekstraksi Gambar (Jika ada)
     const imgEls = Array.from(item.querySelectorAll('img')).filter(img => {
       const src = img.src || '';
       return src && !src.includes('avatar') && !src.includes('cleardot.gif') && (img.naturalWidth > 30 || img.clientWidth > 30 || src.includes('googleusercontent'));
@@ -113,36 +106,28 @@ async function autoAnswerGoogleFormSafe() {
       imgData = await getImgBase64(imgEls[0]);
     }
 
-    // 6. Susun Prompt
     let promptText = `Soal: ${teksSoal}\n`;
-    if (imgData) promptText += `(Perhatikan gambar yang dilampirkan pada soal)\n`;
+    if (imgData) promptText += `(Perhatikan gambar pada soal jika ada)\n`;
     promptText += `Pilihan Jawaban:\n${daftarOpsi.map((o, idx) => `${idx + 1}.${o}`).join('\n')}\n\n`;
 
     if (isCheckbox) {
-      promptText += `PETUNJUK: Soal ini BISA MEMILIKI LEBIH DARI SATU JAWABAN. Sebutkan SEMUA jawaban yang benar. Tuliskan setiap jawaban yang dipilih persis seperti teks opsi di atas, dipisahkan oleh baris baru (newline).`;
+      promptText += `PETUNJUK: Soal ini BISA MEMILIKI LEBIH DARI SATU JAWABAN. Sebutkan SEMUA jawaban yang benar, dipisahkan oleh baris baru (newline).`;
     } else {
-      promptText += `PETUNJUK: Pilih HANYA 1 jawaban yang paling tepat. Balas HANYA dengan menyalin persis teks opsi jawaban tersebut tanpa nomor atau penjelasan.`;
+      promptText += `PETUNJUK: Pilih HANYA 1 jawaban yang paling tepat. Balas HANYA dengan menyalin persis teks opsi jawaban tersebut.`;
     }
 
-    // 7. Susun Payload API Groq
-    const activeModel = imgData ? visionModel : textModel;
-    let contentPayload;
-
-    if (imgData) {
-      contentPayload = [
-        { type: "image_url", image_url: { url: `data:${imgData.mimeType};base64,${imgData.base64data}` } },
-        { type: "text", text: promptText }
-      ];
-    } else {
-      contentPayload = promptText;
-    }
+    let activeModel = (imgData && visionModel) ? visionModel : textModel;
+    let contentPayload = (imgData && visionModel) ? [
+      { type: "image_url", image_url: { url: `data:${imgData.mimeType};base64,${imgData.base64data}` } },
+      { type: "text", text: promptText }
+    ] : promptText;
 
     let berhasil = false;
     let percobaan = 0;
 
     while (!berhasil && percobaan < 3) {
       try {
-        const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+        let response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -161,7 +146,28 @@ async function autoAnswerGoogleFormSafe() {
           continue;
         }
 
-        const data = await response.json();
+        let data = await response.json();
+
+        if (data.error && activeModel !== textModel) {
+          console.warn(`⚠️ Vision model gagal: "${data.error.message}". Mengalihkan ke model teks...`);
+          visionModel = null;
+          activeModel = textModel;
+          contentPayload = promptText;
+
+          response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${API_KEY}`
+            },
+            body: JSON.stringify({
+              model: activeModel,
+              messages: [{ role: "user", content: contentPayload }]
+            })
+          });
+          data = await response.json();
+        }
+
         if (data.error) {
           console.error(`❌ Error pada soal ${i + 1}:`, data.error.message || data.error);
           break;
@@ -203,7 +209,6 @@ async function autoAnswerGoogleFormSafe() {
       }
     }
 
-    // Jeda 2.5 detik per soal
     await new Promise(r => setTimeout(r, 2500));
   }
 
