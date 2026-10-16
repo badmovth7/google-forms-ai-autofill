@@ -1,15 +1,15 @@
 # 🤖 Google Forms Auto Answer via AI API (Vision & Multi-Select Supported)
 
-Skrip otomatisasi browser console untuk membaca soal Google Form, menganalisis teks maupun **soal bergambar**, memproses jawaban menggunakan AI API, dan memilih opsi jawaban secara otomatis di layar.
+Skrip otomatisasi browser console untuk membaca soal Google Form, menganalisis teks maupun **soal bergambar**, memproses jawaban menggunakan AI API terbaru, dan memilih opsi jawaban secara otomatis di layar.
 
 ---
 
 ## ✨ Fitur-Fitur Utama
 
-* 📸 **Vision / Multimodal Support:** Mampu membaca dan menganalisis soal bergambar (grafik, diagram, rumus) menggunakan model Vision (`Gemini 2.0 Flash` / `Llama 3.2 Vision`).
+* 📸 **Vision / Multimodal Support:** Mampu membaca dan menganalisis soal bergambar (grafik, diagram, rumus) menggunakan model Vision atau otomatis *fallback* ke model teks jika model vision tidak tersedia.
 * ☑️ **Multi-Select (Checkbox) Support:** Mendeteksi soal centang yang memiliki **lebih dari satu jawaban benar** dan mencentang semua opsi yang tepat secara otomatis.
 * ⏩ **Auto-Skip Biodata:** Otomatis melompati kolom identitas seperti *Nama, NIM/NPM, Email, Kelas, No. HP*, dan isian teks tanpa pilihan.
-* 🔍 **Smart Model Filtering:** Memburu dan menyaring model generatif terbaik secara otomatis. Bebas dari eror model audio/TTS/guardrail (`400 Bad Request`).
+* 🔍 **Smart Model Detection (Updated Models):** Otomatis mendeteksi model aktif terbaru di Groq (`openai/gpt-oss-120b`, `qwen/qwen3.8-27b`, dll.) dan mengabaikan model audio/TTS/guardrail agar terhindar dari error `400 Bad Request`.
 * ⏳ **Rate Limit & Safety Handler:** Dilengkapi sistem penanganan *HTTP 429 (Rate Limit)* dengan jeda aman.
 * 🛡️ **Review Before Submit:** Skrip hanya mencentang pilihan di layar tanpa menekan tombol *Submit*, sehingga kamu tetap bisa meninjau ulang semua jawaban.
 
@@ -19,8 +19,8 @@ Skrip otomatisasi browser console untuk membaca soal Google Form, menganalisis t
 
 | Nama File | API Provider | Jeda Per Soal | Fitur Utama & Penggunaan |
 | :--- | :--- | :--- | :--- |
-| **`groq-safe.js`** | Groq (`Llama 3.3` / `Llama 3.2 Vision`) | 2.5 Detik | **Sangat Direkomendasikan.** Aman dari pembatasan kuota (*rate limit 429*), mendukung soal bergambar & jawaban majemuk. Cocok untuk ujian 50–100+ soal. |
-| **`groq-fast.js`** | Groq (`Llama 3.3` / `Llama 3.2 Vision`) | 1 Detik | Versi cepat untuk kuis kilat dengan jumlah soal sedikit (<30 soal). |
+| **`groq-safe.js`** | Groq (`GPT-OSS` / `Qwen` / `Vision`) | 2.5 Detik | **Sangat Direkomendasikan.** Aman dari pembatasan kuota (*rate limit 429*), mendukung soal bergambar & jawaban majemuk. Cocok untuk ujian 50–100+ soal. |
+| **`groq-fast.js`** | Groq (`GPT-OSS` / `Qwen` / `Vision`) | 1 Detik | Versi cepat untuk kuis kilat dengan jumlah soal sedikit (<30 soal). |
 | **`gemini-auto.js`** | Google AI Studio (`Gemini 2.0 Flash`) | 1 Detik | Sangat akurat untuk soal bergambar kompleks & rumus. Wajib menggunakan API Key dari akun `@gmail.com` pribadi. |
 
 ---
